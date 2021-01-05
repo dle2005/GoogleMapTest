@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -40,13 +41,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LatLng mOrigin;
     LatLng mDest;
 
+    ArrayList<LatLng> markerPoints;
+    TextView tv_info;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        tv_info = (TextView) findViewById(R.id.info);
+
         mOrigin = new LatLng(41.3949, 2.0086);
         mDest = new LatLng(41.1258, 1.2035);
+
+        markerPoints = new ArrayList<LatLng>();
+        markerPoints.add(mOrigin);
+        markerPoints.add(mDest);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -161,11 +171,27 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             ArrayList points = null;
             PolylineOptions polylineOptions = null;
 
-            for (List<HashMap<String, String>> path : lists) {
+            String distance = "";
+            String duration = "";
+
+            for (int i = 0; i < lists.size(); i++) {
                 points = new ArrayList();
                 polylineOptions = new PolylineOptions();
 
-                for (HashMap<String, String> point : path) {
+                List<HashMap<String, String>> path = lists.get(i);
+
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    if(j == 0) {
+                        distance = (String) point.get("distance");
+                        continue;
+                    }
+                    else if (j == 1) {
+                        duration = (String) point.get("duration");
+                        continue;
+                    }
+
                     double lat = Double.parseDouble(point.get("lat"));
                     double lon = Double.parseDouble(point.get("lng"));
 
@@ -178,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
             if (polylineOptions != null) {
                 mMap.addPolyline(polylineOptions);
+                tv_info.setText("Distance: " + distance + ", Duration: " + duration);
             } else {
                 Toast.makeText(getApplicationContext(), "Direction not found", Toast.LENGTH_LONG).show();
             }
