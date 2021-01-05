@@ -12,9 +12,11 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBSJEn1p-B_JaGislkqWEyd7rHprbdHQ7E" />
+            android:value="@string/goole_maps_key" />
 
-       <activity android:name=".MainActivity">
+       <activity
+           android:name=".MainActivity"
+           android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

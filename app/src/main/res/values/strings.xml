@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">GoogleMapTest</string>
+    <string name="goole_maps_key">AIzaSyBSJEn1p-B_JaGislkqWEyd7rHprbdHQ7E</string>
 </resources>
