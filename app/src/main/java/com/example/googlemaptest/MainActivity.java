@@ -7,9 +7,15 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.webkit.GeolocationPermissions;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,11 +44,25 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     GoogleMap mMap;
+    GoogleMap mMapSearch;
+
     LatLng mOrigin;
     LatLng mDest;
+    LatLng mWay;
+
+    LatLng point;
+    String url;
+    MarkerOptions temp;
 
     ArrayList<LatLng> markerPoints;
     TextView tv_info;
+
+    Geocoder geocoder;
+    EditText et_search;
+    Button bt_search;
+    Button bt_origin;
+    Button bt_dest;
+    Button bt_way;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +71,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         tv_info = (TextView) findViewById(R.id.info);
 
-        mOrigin = new LatLng(41.3949, 2.0086);
-        mDest = new LatLng(41.1258, 1.2035);
+//        mOrigin = new LatLng(41.3949, 2.0086);
+//        mDest = new LatLng(41.1258, 1.2035);
 
-        markerPoints = new ArrayList<LatLng>();
-        markerPoints.add(mOrigin);
-        markerPoints.add(mDest);
+//        markerPoints = new ArrayList<LatLng>();
+//        markerPoints.add(mOrigin);
+//        markerPoints.add(mDest);
+
+        et_search = (EditText) findViewById(R.id.et_search);
+        bt_search = (Button) findViewById(R.id.bt_search);
+
+        bt_origin = (Button) findViewById(R.id.bt_origin);
+        bt_dest = (Button) findViewById(R.id.bt_dest);
+        bt_way = (Button) findViewById(R.id.bt_way);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -65,16 +92,87 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMapSearch = googleMap;
+        geocoder = new Geocoder(this);
+        MarkerOptions mOptions = new MarkerOptions();
+        temp = new MarkerOptions();
 
-        mMap.addMarker(new MarkerOptions().position(mOrigin).title("Origin"));
-        mMap.addMarker(new MarkerOptions().position(mDest).title("Dest"));
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mOrigin, 8f));
+//        mMap.addMarker(new MarkerOptions().position(mOrigin).title("Origin"));
+//        mMap.addMarker(new MarkerOptions().position(mDest).title("Dest"));
 
-        String url = getUrl(mOrigin, mDest);
+//        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mOrigin, 8f));
 
-        RequestTask requestTask = new RequestTask();
-        requestTask.execute(url);
+        bt_origin.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                temp = mOptions;
+                mMap.addMarker(temp);
+                mOrigin = point;
+
+                Toast.makeText(getApplicationContext(), "출발지 추가", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        bt_dest.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                temp = mOptions;
+                mMap.addMarker(temp);
+                mDest = point;
+
+                Toast.makeText(getApplicationContext(), "도착지 추가", Toast.LENGTH_LONG).show();
+
+                url = getUrl(mOrigin, mDest, mWay);
+
+                RequestTask requestTask = new RequestTask();
+                requestTask.execute(url);
+            }
+        });
+
+        bt_way.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                temp = mOptions;
+                mMap.addMarker(temp);
+                mWay = point;
+
+                Toast.makeText(getApplicationContext(), "경유지 추가", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        bt_search.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String str = et_search.getText().toString();
+                List<Address> addressList = null;
+                try {
+                    addressList = geocoder.getFromLocationName(str, 10);
+                } catch (IOException e) {
+                    Toast.makeText(getApplicationContext(), "Direction not found", Toast.LENGTH_LONG).show();
+                    Log.d("Main", "setOnClickListener IOException");
+                }
+
+                System.out.println(addressList.get(0).toString());
+                String []splitStr = addressList.get(0).toString().split(",");
+                String address = splitStr[0].substring(splitStr[0].indexOf("\"") + 1,splitStr[0].length() - 2); // 주소
+                Log.d("Main", "address: " + address);
+
+                String latitude = splitStr[10].substring(splitStr[10].indexOf("=") + 1); // 위도
+                String longitude = splitStr[12].substring(splitStr[12].indexOf("=") + 1); // 경도
+                Log.d("Main", "latitude: " + latitude);
+                Log.d("Main", "longitude: " + longitude);
+
+                point = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
+                Log.d("Main", "point: " + point);
+
+                mOptions.title(str);
+                mOptions.snippet(address);
+                mOptions.position(point);
+                mMapSearch.addMarker(mOptions);
+                mMapSearch.moveCamera(CameraUpdateFactory.newLatLngZoom(point,15));
+            }
+        });
     }
 
     private String downloadUrl(String strUrl) throws IOException {
@@ -111,15 +209,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return data;
     }
 
-    public String getUrl(LatLng origin, LatLng dest) {
+    public String getUrl(LatLng origin, LatLng dest, LatLng way) {
          String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
          String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+         String str_way = "waypoints=via:" + way.latitude + "%2C" + way.longitude;
 
          String mode = "mode=driving";
 
          String key = "key=" + getString(R.string.goole_maps_key);
 
-         String parameter = str_origin + "&" + str_dest + "&" + mode + "&" + key;
+         String parameter = str_origin + "&" + str_way + "&" + str_dest + "&" + mode + "&" + key;
 
          String url = "https://maps.googleapis.com/maps/api/directions/json" + "?" + parameter;
 
