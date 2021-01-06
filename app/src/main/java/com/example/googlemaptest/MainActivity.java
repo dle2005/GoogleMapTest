@@ -148,29 +148,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 List<Address> addressList = null;
                 try {
                     addressList = geocoder.getFromLocationName(str, 10);
+                    if (addressList != null && !addressList.equals(" ")) {
+                        String []splitStr = addressList.get(0).toString().split(",");
+                        String address = splitStr[0].substring(splitStr[0].indexOf("\"") + 1,splitStr[0].length() - 2); // 주소
+                        Log.d("Main", "address: " + address);
+
+                        String latitude = splitStr[10].substring(splitStr[10].indexOf("=") + 1); // 위도
+                        String longitude = splitStr[12].substring(splitStr[12].indexOf("=") + 1); // 경도
+                        Log.d("Main", "latitude: " + latitude);
+                        Log.d("Main", "longitude: " + longitude);
+
+                        point = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
+                        Log.d("Main", "point: " + point);
+
+                        mOptions.title(str);
+                        mOptions.snippet(address);
+                        mOptions.position(point);
+                        mMapSearch.addMarker(mOptions);
+                        mMapSearch.moveCamera(CameraUpdateFactory.newLatLngZoom(point,15));
+                    }
                 } catch (IOException e) {
                     Toast.makeText(getApplicationContext(), "Direction not found", Toast.LENGTH_LONG).show();
                     Log.d("Main", "setOnClickListener IOException");
                 }
-
-                System.out.println(addressList.get(0).toString());
-                String []splitStr = addressList.get(0).toString().split(",");
-                String address = splitStr[0].substring(splitStr[0].indexOf("\"") + 1,splitStr[0].length() - 2); // 주소
-                Log.d("Main", "address: " + address);
-
-                String latitude = splitStr[10].substring(splitStr[10].indexOf("=") + 1); // 위도
-                String longitude = splitStr[12].substring(splitStr[12].indexOf("=") + 1); // 경도
-                Log.d("Main", "latitude: " + latitude);
-                Log.d("Main", "longitude: " + longitude);
-
-                point = new LatLng(Double.parseDouble(latitude), Double.parseDouble(longitude));
-                Log.d("Main", "point: " + point);
-
-                mOptions.title(str);
-                mOptions.snippet(address);
-                mOptions.position(point);
-                mMapSearch.addMarker(mOptions);
-                mMapSearch.moveCamera(CameraUpdateFactory.newLatLngZoom(point,15));
             }
         });
     }
@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
          String mode = "mode=driving";
 
-         String key = "key=" + getString(R.string.goole_maps_key);
+         String key = "key=" + getString(R.string.google_maps_key);
 
          String parameter = str_origin + "&" + str_way + "&" + str_dest + "&" + mode + "&" + key;
 
