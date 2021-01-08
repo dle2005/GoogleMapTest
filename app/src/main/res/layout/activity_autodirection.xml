@@ -7,11 +7,27 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <fragment
-        android:id="@+id/autocomplete_fragment"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment" />
+        android:orientation="horizontal">
+
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="3dp"
+            android:hint="검색"
+            android:id="@+id/et_search" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="3dp"
+            android:text="검색"
+            android:id="@+id/bt_search" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -45,12 +61,15 @@
     </LinearLayout>
 
     <fragment
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:name = "com.google.android.gms.maps.SupportMapFragment"
         android:id="@+id/map" />
 
-
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/info" />
 
 
 </LinearLayout>

@@ -37,12 +37,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Cap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.maps.model.SquareCap;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.api.net.PlacesClient;
@@ -65,9 +63,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import static com.google.android.gms.maps.model.JointType.ROUND;
-
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class LocationActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     GoogleMap mMap;
     Marker marker, currentMarker;
@@ -76,9 +72,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LatLng mOrigin, mDest, mWay;
     String url;
 
+    TextView tv_info;
     Button bt_origin, bt_dest, bt_way;
     View mLayout;
-
 
     static final int GPS_ENABLE_REQUEST_CODE = 2001;
     static final int PERMISSIONS_REQUEST_CODE = 100;
@@ -96,13 +92,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_location);
 
         if (!Places.isInitialized()) {
             Places.initialize(getApplicationContext(), getString(R.string.google_maps_key));
         }
         PlacesClient placesClient = Places.createClient(this);
 
+        tv_info = findViewById(R.id.info);
         bt_origin = findViewById(R.id.bt_origin);
         bt_dest = findViewById(R.id.bt_dest);
         bt_way = findViewById(R.id.bt_way);
@@ -163,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         Snackbar.LENGTH_INDEFINITE).setAction("확인", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        ActivityCompat.requestPermissions( MainActivity.this, REQUIRED_PERMISSIONS,
+                        ActivityCompat.requestPermissions( LocationActivity.this, REQUIRED_PERMISSIONS,
                                 PERMISSIONS_REQUEST_CODE);
                     }
                 }).show();
@@ -190,7 +187,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast.makeText(getApplicationContext(), "도착지 추가", Toast.LENGTH_LONG).show();
 
             url = getUrl(mOrigin, mDest, mWay);
-
 
             RequestTask requestTask = new RequestTask();
             requestTask.execute(url);
@@ -438,7 +434,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void showDialogForLocationServiceSetting() {
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(LocationActivity.this);
         builder.setTitle("위치 서비스 비활성화");
         builder.setMessage("앱을 사용하기 위해서는 위치 서비스가 필요합니다.\n"
                 + "위치 설정을 수정하실래요?");
@@ -515,19 +511,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public String getUrl(LatLng origin, LatLng dest, LatLng way) {
-        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
-        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
-        String str_way = "waypoints=via:" + way.latitude + "%2C" + way.longitude;
+         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+         String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+         String str_way = "waypoints=via:" + way.latitude + "%2C" + way.longitude;
 
-        String mode = "mode=driving";
+         String mode = "mode=driving";
 
-        String key = "key=" + getString(R.string.google_maps_key);
+         String key = "key=" + getString(R.string.google_maps_key);
 
-        String parameter = str_origin + "&" + str_way + "&" + str_dest + "&" + mode + "&" + key;
+         String parameter = str_origin + "&" + str_way + "&" + str_dest + "&" + mode + "&" + key;
 
-        String url = "https://maps.googleapis.com/maps/api/directions/json" + "?" + parameter;
+         String url = "https://maps.googleapis.com/maps/api/directions/json" + "?" + parameter;
 
-        return url;
+         return url;
     }
 
     public class RequestTask extends AsyncTask<String, Void, String> {
@@ -562,9 +558,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 jsonObject = new JSONObject(jsonString[0]);
                 DirectionParser parser = new DirectionParser();
                 routes = parser.parse(jsonObject);
-
-                Log.d("Main", "거리: " + DirectionParser.distance + " 소요 시간: " + DirectionParser.duration);
-
             } catch (JSONException e) {
                 Log.d("Main", "ParserTask doInBackground Exception e");
             }
@@ -577,30 +570,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             super.onPostExecute(lists);
             ArrayList points = null;
             PolylineOptions polylineOptions = null;
-            Log.d("test1", "onPostExecute2");
-            for (List<HashMap<String, String>> path : lists) {
+
+            String distance = "";
+            String duration = "";
+
+            for (int i = 0; i < lists.size(); i++) {
                 points = new ArrayList();
                 polylineOptions = new PolylineOptions();
 
-                for (HashMap<String, String> point : path) {
+                List<HashMap<String, String>> path = lists.get(i);
+
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
+
+                    if(j == 0) {
+                        distance = (String) point.get("distance");
+                        continue;
+                    }
+                    else if (j == 1) {
+                        duration = (String) point.get("duration");
+                        continue;
+                    }
+
                     double lat = Double.parseDouble(point.get("lat"));
                     double lon = Double.parseDouble(point.get("lng"));
 
                     points.add(new LatLng(lat, lon));
                 }
-
-                Cap endCap;
                 polylineOptions.addAll(points);
                 polylineOptions.width(15f);
                 polylineOptions.color(Color.BLUE);
                 polylineOptions.geodesic(true);
-//                polylineOptions.endCap(new SquareCap());
-                polylineOptions.startCap(new SquareCap());
-                polylineOptions.endCap(new SquareCap());
-                polylineOptions.jointType(ROUND);
             }
             if (polylineOptions != null) {
                 mMap.addPolyline(polylineOptions);
+                tv_info.setText("Distance: " + distance + ", Duration: " + duration);
             } else {
                 Toast.makeText(getApplicationContext(), "Direction not found", Toast.LENGTH_LONG).show();
             }

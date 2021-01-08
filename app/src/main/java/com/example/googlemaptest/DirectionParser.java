@@ -10,10 +10,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+
+
 public class DirectionParser {
-    /**
-     * Receives a JSONObject and returns a list of lists containing latitude and longitude
-     */
+
+    static String distance;
+    static String duration;
+
     public List<List<HashMap<String, String>>> parse(JSONObject jObject) {
 
         List<List<HashMap<String, String>>> routes = new ArrayList<List<HashMap<String, String>>>();
@@ -33,12 +36,16 @@ public class DirectionParser {
                 /** Traversing all legs */
                 for (int j = 0; j < jLegs.length(); j++) {
                     jSteps = ((JSONObject) jLegs.get(j)).getJSONArray("steps");
+                    duration = (String) ((JSONObject) ((JSONObject) jLegs.get(j)).get("duration")).get("text");
+                    distance = (String) ((JSONObject) ((JSONObject) jLegs.get(j)).get("distance")).get("text");
 
                     /** Traversing all steps */
                     for (int k = 0; k < jSteps.length(); k++) {
                         String polyline = "";
+
                         polyline = (String) ((JSONObject) ((JSONObject) jSteps.get(k)).get("polyline")).get("points");
                         List<LatLng> list = decodePoly(polyline);
+
 
                         /** Traversing all points */
                         for (int l = 0; l < list.size(); l++) {
@@ -61,7 +68,6 @@ public class DirectionParser {
 
 
     private List<LatLng> decodePoly(String encoded) {
-
         List<LatLng> poly = new ArrayList<LatLng>();
         int index = 0, len = encoded.length();
         int lat = 0, lng = 0;
